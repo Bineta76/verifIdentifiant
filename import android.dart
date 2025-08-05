@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Connexion',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const LoginPage(),
+    );
+  }
+}
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController nomController = TextEditingController();
+  final TextEditingController prenomController = TextEditingController();
+  String message = '';
+
+  Future<void> seConnecter() async {
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2/labo/SeConnecter/verifIdentifiant.php'), // 10.0.2.2 pour WAMP depuis un émulateur
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'nom': nomController.text.trim(),
+        'prenom': prenomController.text.trim(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        message = data['success'] ? "Connexion réussie !" : "Nom ou prénom incorrect.";
+      });
+    } else {
+      setState(() {
+        message = "Erreur de communication avec le serveur.";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Page de Connexion')),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: nomController,
+              decoration: const InputDecoration(labelText: 'Nom'),
+            ),
+            TextField(
+              controller: prenomController,
+              decoration: const InputDecoration(labelText: 'Prénom'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: seConnecter,
+              child: const Text('Se connecter'),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              message,
+              style: TextStyle(
+                color: message == "Connexion réussie !" ? Colors.green : Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
